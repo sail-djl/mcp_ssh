@@ -39,7 +39,7 @@ describe('a wrapper flag whose value is its own word', () => {
 
   it.each([
     'env -u X tee /etc/cron.d/x',
-    'strace -u root tee /root/.ssh/authorized_keys',
+    'strace -u root tee /etc/systemd/system/x.service',
     'env -u X dd if=/dev/zero of=/dev/sda',
     'env -u FOO mkfs.ext4 /dev/sda',
     'env -u FOO iptables -F',

@@ -65,8 +65,8 @@ describe('classifyCommand', () => {
     expect(classifyCommand('echo "@reboot x" > /etc/cron.d/persist').class).toBe('destructive');
   });
 
-  it('write to authorized_keys is destructive', () => {
-    expect(classifyCommand('echo "ssh-rsa AAAA..." >> ~/.ssh/authorized_keys').class).toBe('destructive');
+  it('write to authorized_keys is no longer destructive (family removed locally)', () => {
+    expect(classifyCommand('echo "ssh-rsa AAAA..." >> ~/.ssh/authorized_keys').class).toBe('safe');
   });
 
   it('write to systemd is destructive', () => {

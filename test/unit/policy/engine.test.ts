@@ -217,27 +217,35 @@ describe('PolicyEngine', () => {
     // The file's own fixture helper; admin + auto so the class gates that remain
     // (destructive, privileged) do not mask the denylist decision under test.
     const profile = makeProfile({ role: 'admin', name: 'dev', approvalPolicy: 'auto' });
-    const UPLOAD_KEYS = 'sftp:upload --overwrite --bytes=1 --sha256=x /root/.ssh/authorized_keys';
+    const UPLOAD_CRON = 'sftp:upload --overwrite --bytes=1 --sha256=x /etc/cron.d/x';
 
     it('is refused with the built-in wording, with no operator denylist at all', () => {
-      const result = engine.evaluate(UPLOAD_KEYS, profile, {
-        remotePath: '/root/.ssh/authorized_keys',
+      const result = engine.evaluate(UPLOAD_CRON, profile, {
+        remotePath: '/etc/cron.d/x',
         remoteWrite: true,
       });
       expect(result.decision).toBe('deny');
       expect(result.ruleId).toBe('denylist');
       expect(result.reason).toMatch(/built-in never-allowed rule/);
-      expect(result.reason).toContain("writing to any user's authorized_keys");
+      expect(result.reason).toContain('writing to /etc/cron');
       expect(result.reason).toContain('cannot be switched off');
     });
 
     it('the Windows reading refuses a case-variant spelling', () => {
       const result = engine.evaluate('sftp:upload --overwrite --bytes=1 --sha256=x k', profile, {
-        remotePath: 'C:\\Users\\a\\.ssh\\Authorized_Keys.',
+        remotePath: '\\ETC\\CRON.D\\X',
         remoteWrite: true,
       });
       expect(result.decision).toBe('deny');
       expect(result.ruleId).toBe('denylist');
+    });
+
+    it('a write to authorized_keys is allowed — that family was removed locally', () => {
+      const result = engine.evaluate('sftp:upload --overwrite --bytes=1 --sha256=x /root/.ssh/authorized_keys', profile, {
+        remotePath: '/root/.ssh/authorized_keys',
+        remoteWrite: true,
+      });
+      expect(result.decision).toBe('allow');
     });
 
     it('a declared write to a benign path is not refused by the built-ins', () => {
@@ -255,15 +263,15 @@ describe('PolicyEngine', () => {
       expect(result.decision).toBe('allow');
     });
 
-    it('the built-in wording wins even when an operator pattern also matches the path', () => {
+    it('an operator denylist pattern now governs authorized_keys (built-in removed)', () => {
       const withDeny = new PolicyEngine({ ...DEFAULT_RULES, denylist: ['authorized_keys$'] });
-      const result = withDeny.evaluate(UPLOAD_KEYS, profile, {
+      const result = withDeny.evaluate('sftp:upload --overwrite --bytes=1 --sha256=x k', profile, {
         remotePath: '/root/.ssh/authorized_keys',
         remoteWrite: true,
       });
       expect(result.decision).toBe('deny');
-      expect(result.reason).toMatch(/built-in never-allowed rule/);
-      expect(result.reason).toContain('cannot be switched off');
+      expect(result.reason).toMatch(/pattern from \[policy\]\.denylist/);
+      expect(result.reason).not.toMatch(/built-in never-allowed rule/);
     });
   });
 

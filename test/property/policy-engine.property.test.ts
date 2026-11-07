@@ -79,7 +79,7 @@ describe('PolicyEngine invariants (default rules)', () => {
   it('denies an SFTP write to a never-allowed path, whatever the role, tier or approval policy', () => {
     /** The README's never-allowed write paths, plain and in the `//` and `/./` spellings the path readings resolve. */
     const path = fc.tuple(
-      fc.constantFrom('/etc/cron.d/job', '/etc/systemd/system/x.service', '/home/u/.ssh/authorized_keys', '/root/.ssh/authorized_keys'),
+      fc.constantFrom('/etc/cron.d/job', '/etc/systemd/system/x.service'),
       fc.constantFrom('', '//', '/./'),
     ).map(([p, sep]) => (sep ? p.replace('/', sep) : p));
     fc.assert(

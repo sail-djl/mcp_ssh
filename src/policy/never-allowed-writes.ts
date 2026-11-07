@@ -3,12 +3,13 @@ import { normalizeRemotePath, normalizeRemotePathForWindows } from './remote-pat
 /**
  * Which of the README's never-allowed write families a path names.
  *
- * The README sentence covers three targets — writes to `/etc/cron`, `/etc/systemd`
- * and `authorized_keys` — and this type is how a refusal names which one fired,
- * from either check site: the classifier's shell-form rule and the engine's
- * resource check.
+ * The README sentence covers two targets — writes to `/etc/cron` and
+ * `/etc/systemd` (the `authorized_keys` family was removed locally: the
+ * operator wants key writes gated only by `[policy].denylist`) — and this type
+ * is how a refusal names which one fired, from either check site: the
+ * classifier's shell-form rule and the engine's resource check.
  */
-export type NeverAllowedWriteTarget = '/etc/cron' | '/etc/systemd' | 'authorized_keys';
+export type NeverAllowedWriteTarget = '/etc/cron' | '/etc/systemd';
 
 /**
  * The `/etc` families are prefix matches with no boundary: `/etc/crontab` sits under
@@ -19,9 +20,6 @@ export type NeverAllowedWriteTarget = '/etc/cron' | '/etc/systemd' | 'authorized
  */
 const NEVER_DIRS = ['/etc/cron', '/etc/systemd'] as const;
 
-/** The keys family: any path whose last two segments are `.ssh/authorized_keys`. */
-const KEYS_TAIL = '/.ssh/authorized_keys';
-
 /**
  * The refusal wording for a family, defined once because two check sites quote it:
  * the classifier's ForbiddenRule label and the engine's built-in deny reason.
@@ -30,7 +28,6 @@ export function neverAllowedWriteLabel(target: NeverAllowedWriteTarget): string 
   switch (target) {
     case '/etc/cron': return 'writing to /etc/cron';
     case '/etc/systemd': return 'writing to /etc/systemd';
-    case 'authorized_keys': return "writing to any user's authorized_keys";
   }
 }
 
@@ -38,7 +35,6 @@ function familyOf(path: string): NeverAllowedWriteTarget | null {
   for (const dir of NEVER_DIRS) {
     if (path.startsWith(dir)) return dir;
   }
-  if (path.endsWith(KEYS_TAIL) || path === KEYS_TAIL.slice(1)) return 'authorized_keys';
   return null;
 }
 
@@ -48,8 +44,7 @@ function familyOf(path: string): NeverAllowedWriteTarget | null {
  *
  * The same three readings `[policy].denylist` sees (#230): the path as given; a
  * lexically normalized reading (`//`, `/./`, `..`, trailing separators, `\` as a
- * separator); and the Windows reading of it, case-insensitively — so `Authorized_Keys.`,
- * `authorized_keys::$DATA` and backslash spellings reach the same refusal. On a POSIX
+ * separator); and the Windows reading of it, case-insensitively. On a POSIX
  * target some of those are different files; refusing them is the safe direction, the
  * same trade the operator denylist already makes.
  *

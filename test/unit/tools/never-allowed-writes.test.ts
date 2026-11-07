@@ -32,15 +32,20 @@ async function call(tool: string, args: Record<string, unknown>) {
 
 describe('the SFTP write tools and the never-allowed paths', () => {
   it.each([
-    ['sftp-upload', { remotePath: '/root/.ssh/authorized_keys', content: 'k' }],
     ['sftp-upload', { remotePath: '/etc/cron.d/x', content: 'k' }],
-    ['sftp-upload-file', { remotePath: '/root/.ssh/authorized_keys', localPath: 'k' }],
     ['sftp-upload-file', { remotePath: '/etc/systemd/system/x.service', localPath: 'k' }],
   ])('%s to %j is refused by the built-in list', async (tool, args) => {
     const result = await call(tool, args);
     expect(result.isError).toBeTruthy();
     expect(textOf(result)).toMatch(/built-in never-allowed rule/);
     expect(h.auditRecords.at(-1)).toMatchObject({ decision: 'deny', ruleId: 'denylist' });
+  });
+
+  it('a write to authorized_keys is no longer refused (family removed locally)', async () => {
+    const result = await call('sftp-upload', { remotePath: '/root/.ssh/authorized_keys', content: 'k' });
+    expect(textOf(result)).not.toMatch(/never-allowed/);
+    expect(h.auditRecords.at(-1)).toBeTruthy();
+    expect(h.auditRecords.at(-1)?.decision).not.toBe('deny');
   });
 
   it.each([
