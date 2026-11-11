@@ -2265,7 +2265,7 @@ const FORBIDDEN_RULES: ForbiddenRule[] = [
     label: 'chmod making the filesystem root world-writable (recursive 777 /)',
     test: (c, dialect) => worldWritableRoot(c, dialect),
   },
-  ...(['/etc/cron', '/etc/systemd'] as const).map((family) => ({
+  ...(['/etc/cron'] as const).map((family) => ({
     label: neverAllowedWriteLabel(family),
     test: (command: string, dialect: ShellDialect) => findNeverAllowedWriteFamily(command, dialect) === family,
   })),

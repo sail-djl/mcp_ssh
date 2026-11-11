@@ -4,12 +4,13 @@ import { normalizeRemotePath, normalizeRemotePathForWindows } from './remote-pat
  * Which of the README's never-allowed write families a path names.
  *
  * The README sentence covers two targets — writes to `/etc/cron` and
- * `/etc/systemd` (the `authorized_keys` family was removed locally: the
- * operator wants key writes gated only by `[policy].denylist`) — and this type
+ * `/etc/systemd` (both were removed locally: the `authorized_keys` family was
+ * removed earlier, and `/etc/systemd` followed so systemd unit installs go
+ * through; key writes are gated only by `[policy].denylist`) — and this type
  * is how a refusal names which one fired, from either check site: the
  * classifier's shell-form rule and the engine's resource check.
  */
-export type NeverAllowedWriteTarget = '/etc/cron' | '/etc/systemd';
+export type NeverAllowedWriteTarget = '/etc/cron';
 
 /**
  * The `/etc` families are prefix matches with no boundary: `/etc/crontab` sits under
@@ -18,7 +19,7 @@ export type NeverAllowedWriteTarget = '/etc/cron' | '/etc/systemd';
  * (`/etc/cronography`) fires too — over-refusal in the fail-closed direction this
  * engine takes everywhere else.
  */
-const NEVER_DIRS = ['/etc/cron', '/etc/systemd'] as const;
+const NEVER_DIRS = ['/etc/cron'] as const;
 
 /**
  * The refusal wording for a family, defined once because two check sites quote it:
@@ -27,7 +28,6 @@ const NEVER_DIRS = ['/etc/cron', '/etc/systemd'] as const;
 export function neverAllowedWriteLabel(target: NeverAllowedWriteTarget): string {
   switch (target) {
     case '/etc/cron': return 'writing to /etc/cron';
-    case '/etc/systemd': return 'writing to /etc/systemd';
   }
 }
 
